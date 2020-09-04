@@ -1,0 +1,30 @@
+package test
+
+var GlobInt int
+var GlobStr string
+
+// A struct definition
+type Stru struct {
+	A int     // field desc
+	B float32 `desc:"field tag"`
+	C string  `desc:"more tags"`
+}
+
+// A global function
+func GlobFun(a, b float32) float32 {
+	if a > b {
+		return a + b
+	} else if a == b {
+		return a * b
+	} else {
+		return a - b
+	}
+}
+
+func (st *Stru) MethOne(a float32) int {
+	rv := st.A
+	for a := 0; a < 100; a++ {
+		rv += a
+	}
+	return rv
+}
