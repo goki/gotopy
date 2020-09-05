@@ -1,30 +1,52 @@
 package test
 
-var GlobInt int
-var GlobStr string
+GlobInt = 2
+GlobStr = "a string"
 
-// A struct definition
-type Stru struct {
-	A int     // field desc
-	B float32 `desc:"field tag"`
-	C string  `desc:"more tags"`
-}
+class MyStru :
+# A struct definition
+	def __init__(self):
+	# field desc
+		self.A int
+		self.B float32 # `desc:"field tag"`
+		self.C string  # `desc:"more tags"`
 
-// A global function
-func GlobFun(a, b float32) float32 {
-	if a > b {
+# MethOne does something
+	def MethOne(st, arg1 ):
+		"""
+		MethOne does something
+		"""
+		rv = st.A
+		for a = 0; a < 100; a++ :
+			rv += a
+
+		return rv
+	def MethTwo(st, arg1, arg2 , arg3 ):
+		"""
+		MethTwo does something
+		it is pretty cool
+		not really sure about that
+		"""
+		rv = st.A
+		for a = 0; a < 100; a++ :
+			rv += a
+
+		return rv
+
+# A global function
+def GlobFun(a, b ):
+	"""
+	A global function
+	"""
+	if a > b and a == 0 or b == 0 :
 		return a + b
-	} else if a == b {
+	else if a == b :
 		return a * b
-	} else {
+	else :
 		return a - b
-	}
-}
 
-func (st *Stru) MethOne(a float32) int {
-	rv := st.A
-	for a := 0; a < 100; a++ {
-		rv += a
-	}
-	return rv
-}
+		
+		
+		
+		
+		

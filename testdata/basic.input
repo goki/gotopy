@@ -1,10 +1,10 @@
 package test
 
-var GlobInt int
-var GlobStr string
+var GlobInt int = 2
+var GlobStr = "a string"
 
 // A struct definition
-type Stru struct {
+type MyStru struct {
 	A int     // field desc
 	B float32 `desc:"field tag"`
 	C string  `desc:"more tags"`
@@ -12,7 +12,7 @@ type Stru struct {
 
 // A global function
 func GlobFun(a, b float32) float32 {
-	if a > b {
+	if a > b && a == 0 || b == 0 {
 		return a + b
 	} else if a == b {
 		return a * b
@@ -21,7 +21,19 @@ func GlobFun(a, b float32) float32 {
 	}
 }
 
-func (st *Stru) MethOne(a float32) int {
+// MethOne does something
+func (st *MyStru) MethOne(arg1 float32) int {
+	rv := st.A
+	for a := 0; a < 100; a++ {
+		rv += a
+	}
+	return rv
+}
+
+// MethTwo does something
+// it is pretty cool
+// not really sure about that
+func (st *MyStru) MethTwo(arg1, arg2 float32, arg3 int) int {
 	rv := st.A
 	for a := 0; a < 100; a++ {
 		rv += a

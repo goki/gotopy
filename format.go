@@ -36,7 +36,9 @@ func format(
 		if err != nil {
 			return nil, err
 		}
-		return buf.Bytes(), nil
+		pyfix := pyMove(buf.Bytes())
+		return pyfix, nil
+		// return buf.Bytes(), nil
 	}
 
 	// Partial source file.
@@ -79,7 +81,10 @@ func format(
 	if err != nil {
 		return nil, err
 	}
-	out := sourceAdj(buf.Bytes(), cfg.Indent)
+
+	pyfix := pyMove(buf.Bytes())
+
+	out := sourceAdj(pyfix, cfg.Indent)
 
 	// If the adjusted output is empty, the source
 	// was empty but (possibly) for white space.

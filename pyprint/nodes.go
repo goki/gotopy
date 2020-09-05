@@ -16,6 +16,7 @@ package pyprint
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
 	"go/token"
 	"math"
@@ -142,7 +143,7 @@ func (p *printer) exprList(prev0 token.Pos, list []ast.Expr, depth int, mode exp
 				p.print("/* " + filteredMsg + " */")
 			} else {
 				p.print(newline)
-				p.print(indent, "// "+filteredMsg, unindent, newline)
+				p.print(indent, "# "+filteredMsg, unindent, newline)
 			}
 		}
 		return
@@ -304,7 +305,7 @@ func (p *printer) exprList(prev0 token.Pos, list []ast.Expr, depth int, mode exp
 		p.print(token.COMMA)
 		if isIncomplete {
 			p.print(newline)
-			p.print("// " + filteredMsg)
+			p.print("# " + filteredMsg)
 		}
 		if ws == ignore && mode&noIndent == 0 {
 			// unindent if we indented
@@ -316,7 +317,7 @@ func (p *printer) exprList(prev0 token.Pos, list []ast.Expr, depth int, mode exp
 
 	if isIncomplete {
 		p.print(token.COMMA, newline)
-		p.print("// "+filteredMsg, newline)
+		p.print("# "+filteredMsg, newline)
 	}
 
 	if ws == ignore && mode&noIndent == 0 {
@@ -326,7 +327,7 @@ func (p *printer) exprList(prev0 token.Pos, list []ast.Expr, depth int, mode exp
 }
 
 func (p *printer) parameters(fields *ast.FieldList) {
-	p.print(fields.Opening, token.LPAREN)
+	p.print(fields.Opening) // , token.LPAREN)
 	if len(fields.List) > 0 {
 		prevLine := p.lineFor(fields.Opening)
 		ws := indent
@@ -371,7 +372,7 @@ func (p *printer) parameters(fields *ast.FieldList) {
 				p.print(blank)
 			}
 			// parameter type
-			p.expr(stripParensAlways(par.Type))
+			// p.expr(stripParensAlways(par.Type))
 			prevLine = parLineEnd
 		}
 		// if the closing ")" is on a separate line from the last parameter,
@@ -385,25 +386,25 @@ func (p *printer) parameters(fields *ast.FieldList) {
 			p.print(unindent)
 		}
 	}
-	p.print(fields.Closing, token.RPAREN)
+	p.print(fields.Closing) // , token.RPAREN)
 }
 
 func (p *printer) signature(params, result *ast.FieldList) {
 	if params != nil {
 		p.parameters(params)
-	} else {
-		p.print(token.LPAREN, token.RPAREN)
+		// } else {
+		// 	p.print(token.LPAREN, token.RPAREN)
 	}
 	n := result.NumFields()
 	if n > 0 {
 		// result != nil
-		p.print(blank)
+		// p.print(blank)
 		if n == 1 && result.List[0].Names == nil {
 			// single anonymous result; no ()'s
-			p.expr(stripParensAlways(result.List[0].Type))
+			// p.expr(stripParensAlways(result.List[0].Type))
 			return
 		}
-		p.parameters(result)
+		// p.parameters(result)
 	}
 }
 
@@ -447,54 +448,54 @@ func (p *printer) fieldList(fields *ast.FieldList, isStruct, isIncomplete bool) 
 	list := fields.List
 	rbrace := fields.Closing
 	hasComments := isIncomplete || p.commentBefore(p.posFor(rbrace))
-	srcIsOneLine := lbrace.IsValid() && rbrace.IsValid() && p.lineFor(lbrace) == p.lineFor(rbrace)
+	// srcIsOneLine := lbrace.IsValid() && rbrace.IsValid() && p.lineFor(lbrace) == p.lineFor(rbrace)
 
-	if !hasComments && srcIsOneLine {
-		// possibly a one-line struct/interface
-		if len(list) == 0 {
-			// no blank between keyword and {} in this case
-			p.print(lbrace, token.LBRACE, rbrace, token.RBRACE)
-			return
-		} else if p.isOneLineFieldList(list) {
-			// small enough - print on one line
-			// (don't use identList and ignore source line breaks)
-			p.print(lbrace, token.LBRACE, blank)
-			f := list[0]
-			if isStruct {
-				for i, x := range f.Names {
-					if i > 0 {
-						// no comments so no need for comma position
-						p.print(token.COMMA, blank)
-					}
-					p.expr(x)
-				}
-				if len(f.Names) > 0 {
-					p.print(blank)
-				}
-				p.expr(f.Type)
-			} else { // interface
-				if ftyp, isFtyp := f.Type.(*ast.FuncType); isFtyp {
-					// method
-					p.expr(f.Names[0])
-					p.signature(ftyp.Params, ftyp.Results)
-				} else {
-					// embedded interface
-					p.expr(f.Type)
-				}
-			}
-			p.print(blank, rbrace, token.RBRACE)
-			return
-		}
-	}
+	// if !hasComments && srcIsOneLine {
+	// 	// possibly a one-line struct/interface
+	// 	if len(list) == 0 {
+	// 		// no blank between keyword and {} in this case
+	// 		// p.print(lbrace, token.LBRACE, rbrace, token.RBRACE)
+	// 		return
+	// 	} else if p.isOneLineFieldList(list) {
+	// 		// small enough - print on one line
+	// 		// (don't use identList and ignore source line breaks)
+	// 		// p.print(lbrace, token.LBRACE, blank)
+	// 		f := list[0]
+	// 		if isStruct {
+	// 			for i, x := range f.Names {
+	// 				if i > 0 {
+	// 					// no comments so no need for comma position
+	// 					p.print(token.COMMA, blank)
+	// 				}
+	// 				p.expr(x)
+	// 			}
+	// 			if len(f.Names) > 0 {
+	// 				p.print(blank)
+	// 			}
+	// 			p.expr(f.Type)
+	// 		} else { // interface
+	// 			if ftyp, isFtyp := f.Type.(*ast.FuncType); isFtyp {
+	// 				// method
+	// 				p.expr(f.Names[0])
+	// 				p.signature(ftyp.Params, ftyp.Results)
+	// 			} else {
+	// 				// embedded interface
+	// 				p.expr(f.Type)
+	// 			}
+	// 		}
+	// 		// p.print(blank, rbrace, token.RBRACE)
+	// 		return
+	// 	}
+	// }
 	// hasComments || !srcIsOneLine
 
-	p.print(blank, lbrace, token.LBRACE, indent)
+	p.print(lbrace, token.COLON, newline, indent)
 	if hasComments || len(list) > 0 {
 		p.print(formfeed)
 	}
 
 	if isStruct {
-
+		p.print("def __init__(self):", newline, indent)
 		sep := vtab
 		if len(list) == 1 {
 			sep = blank
@@ -507,6 +508,7 @@ func (p *printer) fieldList(fields *ast.FieldList, isStruct, isIncomplete bool) 
 			extraTabs := 0
 			p.setComment(f.Doc)
 			p.recordLine(&line)
+			p.print("self.")
 			if len(f.Names) > 0 {
 				// named fields
 				p.identList(f.Names, false)
@@ -523,6 +525,7 @@ func (p *printer) fieldList(fields *ast.FieldList, isStruct, isIncomplete bool) 
 					p.print(sep)
 				}
 				p.print(sep)
+				p.print("# ")
 				p.expr(f.Tag)
 				extraTabs = 0
 			}
@@ -538,7 +541,7 @@ func (p *printer) fieldList(fields *ast.FieldList, isStruct, isIncomplete bool) 
 				p.print(formfeed)
 			}
 			p.flush(p.posFor(rbrace), token.RBRACE) // make sure we don't lose the last line comment
-			p.setLineComment("// " + filteredMsg)
+			p.setLineComment("# " + filteredMsg)
 		}
 
 	} else { // interface
@@ -569,7 +572,8 @@ func (p *printer) fieldList(fields *ast.FieldList, isStruct, isIncomplete bool) 
 		}
 
 	}
-	p.print(unindent, formfeed, rbrace, token.RBRACE)
+	p.print(unindent, unindent, formfeed, rbrace)
+	// p.print(unindent, formfeed, rbrace, token.RBRACE)
 }
 
 // ----------------------------------------------------------------------------
@@ -720,7 +724,12 @@ func (p *printer) binaryExpr(x *ast.BinaryExpr, prec1, cutoff, depth int) {
 	}
 	xline := p.pos.Line // before the operator (it may be on the next line!)
 	yline := p.lineFor(x.Y.Pos())
-	p.print(x.OpPos, x.Op)
+	opstr := pyOpCvt(x.Op)
+	if opstr != "" {
+		p.print(x.OpPos, opstr)
+	} else {
+		p.print(x.OpPos, x.Op)
+	}
 	if xline != yline && xline > 0 && yline > 0 {
 		// at least one line break, but respect an extra empty line
 		// in the source
@@ -736,6 +745,20 @@ func (p *printer) binaryExpr(x *ast.BinaryExpr, prec1, cutoff, depth int) {
 	if ws == ignore {
 		p.print(unindent)
 	}
+}
+
+// pyOpCvt converts a token to its python equivalent string
+// empty string means it is the same as Go
+func pyOpCvt(tok token.Token) string {
+	switch tok {
+	case token.LAND:
+		return "and"
+	case token.LOR:
+		return "or"
+	case token.NOT:
+		return "not"
+	}
+	return ""
 }
 
 func isBinary(expr ast.Expr) bool {
@@ -788,7 +811,12 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 			p.print(token.RPAREN)
 		} else {
 			// no parenthesis needed
-			p.print(x.Op)
+			opstr := pyOpCvt(x.Op)
+			if opstr != "" {
+				p.print(opstr)
+			} else {
+				p.print(x.Op)
+			}
 			if x.Op == token.RANGE {
 				// TODO(gri) Remove this code if it cannot be reached.
 				p.print(blank)
@@ -946,7 +974,7 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 		p.expr(x.Elt)
 
 	case *ast.StructType:
-		p.print(token.STRUCT)
+		// p.print(token.STRUCT)
 		p.fieldList(x.Fields, true, x.Incomplete)
 
 	case *ast.FuncType:
@@ -1118,10 +1146,10 @@ func (p *printer) stmtList(list []ast.Stmt, nindent int, nextIsRBrace bool) {
 
 // block prints an *ast.BlockStmt; it always spans at least two lines.
 func (p *printer) block(b *ast.BlockStmt, nindent int) {
-	p.print(b.Lbrace, token.LBRACE)
+	p.print(b.Lbrace, token.COLON)
 	p.stmtList(b.List, nindent, true)
 	p.linebreak(p.lineFor(b.Rbrace), 1, ignore, true)
-	p.print(b.Rbrace, token.RBRACE)
+	p.print(b.Rbrace) // , token.RBRACE)
 }
 
 func isTypeName(x ast.Expr) bool {
@@ -1287,7 +1315,11 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool) {
 			depth++
 		}
 		p.exprList(s.Pos(), s.Lhs, depth, 0, s.TokPos, false)
-		p.print(blank, s.TokPos, s.Tok, blank)
+		tok := s.Tok
+		if tok == token.DEFINE {
+			tok = token.ASSIGN
+		}
+		p.print(blank, s.TokPos, tok, blank)
 		p.exprList(s.TokPos, s.Rhs, depth, 0, token.NoPos, false)
 
 	case *ast.GoStmt:
@@ -1333,7 +1365,7 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool) {
 		p.controlClause(false, s.Init, s.Cond, nil)
 		p.block(s.Body, 1)
 		if s.Else != nil {
-			p.print(blank, token.ELSE, blank)
+			p.print(token.ELSE, blank)
 			switch s.Else.(type) {
 			case *ast.BlockStmt, *ast.IfStmt:
 				p.stmt(s.Else, nextIsRBrace)
@@ -1341,7 +1373,7 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool) {
 				// This can only happen with an incorrectly
 				// constructed AST. Permit it but print so
 				// that it can be parsed without errors.
-				p.print(token.LBRACE, indent, formfeed)
+				p.print(token.COLON, indent, formfeed)
 				p.stmt(s.Else, true)
 				p.print(unindent, formfeed, token.RBRACE)
 			}
@@ -1349,17 +1381,17 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool) {
 
 	case *ast.CaseClause:
 		if s.List != nil {
-			p.print(token.CASE, blank)
+			p.print(token.IF, blank)
 			p.exprList(s.Pos(), s.List, 1, 0, s.Colon, false)
 		} else {
-			p.print(token.DEFAULT)
+			p.print(token.ELSE)
 		}
 		p.print(s.Colon, token.COLON)
 		p.stmtList(s.Body, 1, nextIsRBrace)
 
 	case *ast.SwitchStmt:
-		p.print(token.SWITCH)
-		p.controlClause(false, s.Init, s.Tag, nil)
+		// p.print(token.SWITCH)
+		// p.controlClause(false, s.Init, s.Tag, nil)
 		p.block(s.Body, 0)
 
 	case *ast.TypeSwitchStmt:
@@ -1577,11 +1609,11 @@ func (p *printer) spec(spec ast.Spec, n int, doIndent bool) {
 			p.internalError("expected n = 1; got", n)
 		}
 		p.setComment(s.Doc)
+		// if s.Type != nil { // type first
+		// 	// p.print(blank)
+		// 	p.expr(s.Type)
+		// }
 		p.identList(s.Names, doIndent) // always present
-		if s.Type != nil {
-			p.print(blank)
-			p.expr(s.Type)
-		}
 		if s.Values != nil {
 			p.print(blank, token.ASSIGN, blank)
 			p.exprList(token.NoPos, s.Values, 1, 0, token.NoPos, false)
@@ -1590,6 +1622,7 @@ func (p *printer) spec(spec ast.Spec, n int, doIndent bool) {
 
 	case *ast.TypeSpec:
 		p.setComment(s.Doc)
+		p.print("class", blank)
 		p.expr(s.Name)
 		if n == 1 {
 			p.print(blank)
@@ -1600,6 +1633,9 @@ func (p *printer) spec(spec ast.Spec, n int, doIndent bool) {
 			p.print(token.ASSIGN, blank)
 		}
 		p.expr(s.Type)
+		p.print("<<<<EndClass: ")
+		p.expr(s.Name)
+		p.print(">>>>", newline)
 		p.setComment(s.Comment)
 
 	default:
@@ -1609,13 +1645,13 @@ func (p *printer) spec(spec ast.Spec, n int, doIndent bool) {
 
 func (p *printer) genDecl(d *ast.GenDecl) {
 	p.setComment(d.Doc)
-	p.print(d.Pos(), d.Tok, blank)
+	// p.print(d.Pos(), d.Tok, blank)
 
 	if d.Lparen.IsValid() || len(d.Specs) > 1 {
 		// group of parenthesized declarations
-		p.print(d.Lparen, token.LPAREN)
+		// p.print(d.Lparen, token.LPAREN)
 		if n := len(d.Specs); n > 0 {
-			p.print(indent, formfeed)
+			// p.print(indent, formfeed)
 			if n > 1 && (d.Tok == token.CONST || d.Tok == token.VAR) {
 				// two or more grouped const/var declarations:
 				// determine if the type column must be kept
@@ -1638,9 +1674,9 @@ func (p *printer) genDecl(d *ast.GenDecl) {
 					p.spec(s, n, false)
 				}
 			}
-			p.print(unindent, formfeed)
+			// p.print(unindent, formfeed)
 		}
-		p.print(d.Rparen, token.RPAREN)
+		// p.print(d.Rparen, token.RPAREN)
 
 	} else if len(d.Specs) > 0 {
 		// single declaration
@@ -1738,25 +1774,25 @@ func (p *printer) funcBody(headerSize int, sep whiteSpace, b *ast.BlockStmt) {
 	}(p.level)
 	p.level = 0
 
-	const maxSize = 100
-	if headerSize+p.bodySize(b, maxSize) <= maxSize {
-		p.print(sep, b.Lbrace, token.LBRACE)
-		if len(b.List) > 0 {
-			p.print(blank)
-			for i, s := range b.List {
-				if i > 0 {
-					p.print(token.SEMICOLON, blank)
-				}
-				p.stmt(s, i == len(b.List)-1)
-			}
-			p.print(blank)
-		}
-		p.print(noExtraLinebreak, b.Rbrace, token.RBRACE, noExtraLinebreak)
-		return
-	}
+	// const maxSize = 100
+	// if headerSize+p.bodySize(b, maxSize) <= maxSize {
+	// 	p.print(sep, token.COLON, n) //b.Lbrace, token.LBRACE)
+	// 	if len(b.List) > 0 {
+	// 		p.print(blank)
+	// 		for i, s := range b.List {
+	// 			if i > 0 {
+	// 				p.print(token.SEMICOLON, blank)
+	// 			}
+	// 			p.stmt(s, i == len(b.List)-1)
+	// 		}
+	// 		p.print(blank)
+	// 	}
+	// 	p.print(noExtraLinebreak, b.Rbrace, token.RBRACE, noExtraLinebreak)
+	// 	return
+	// }
 
 	if sep != ignore {
-		p.print(blank) // always use blank
+		// p.print(blank) // always use blank
 	}
 	p.block(b, 1)
 }
@@ -1771,20 +1807,75 @@ func (p *printer) distanceFrom(startPos token.Pos, startOutCol int) int {
 	return infinity
 }
 
+func (p *printer) printMethRecvType(typ ast.Expr) {
+	switch x := typ.(type) {
+	case *ast.StarExpr:
+		p.print(x.X)
+	case *ast.Ident:
+		p.print(x)
+	default:
+		p.print(fmt.Sprintf("recv type unknown: %+T\n", x))
+	}
+}
+
+func (p *printer) pyFuncComments(com *ast.CommentGroup) {
+	if com == nil || len(com.List) == 0 {
+		return
+	}
+	p.print(`"""`, newline)
+	for _, c := range com.List {
+		if len(c.Text) < 3 {
+			p.print(c.Text)
+		} else {
+			if c.Text[1] == '/' {
+				p.print(c.Text[3:])
+			} else {
+				p.print(c.Text)
+			}
+		}
+		p.print(newline)
+	}
+	p.print(`"""`, newline)
+}
+
 func (p *printer) funcDecl(d *ast.FuncDecl) {
-	p.setComment(d.Doc)
-	p.print(d.Pos(), token.FUNC, blank)
 	// We have to save startCol only after emitting FUNC; otherwise it can be on a
 	// different line (all whitespace preceding the FUNC is emitted only when the
 	// FUNC is emitted).
-	startCol := p.out.Column - len("func ")
+	// p.flush(p.pos, p.lastTok)
+	// p.comments = nil
 	if d.Recv != nil {
-		p.parameters(d.Recv) // method: print receiver
-		p.print(blank)
+		p.print("<<<<Method: ")
+		p.printMethRecvType(d.Recv.List[0].Type)
+		p.print(">>>>", newline)
+		// p.parameters(d.Recv) // method: print receiver
+		// p.print(blank)
+		p.print(indent)
+	} else {
+		p.commentOffset = 0
 	}
+	p.flush(p.pos, p.lastTok)
+	p.print("def", blank)
+	startCol := p.out.Column - len("def ")
 	p.expr(d.Name)
+	p.print(token.LPAREN)
+	if d.Recv != nil {
+		p.expr(d.Recv.List[0].Names[0])
+		if d.Type.Params.NumFields() > 0 {
+			p.print(token.COMMA, blank)
+		}
+	}
 	p.signature(d.Type.Params, d.Type.Results)
+	p.print(token.RPAREN)
+	p.print(token.COLON, newline, indent)
+	p.pyFuncComments(d.Doc)
+	p.print(unindent)
 	p.funcBody(p.distanceFrom(d.Pos(), startCol), vtab, d.Body)
+	if d.Recv != nil {
+		p.print(unindent)
+		p.flush(p.pos, p.lastTok)
+		p.print("<<<<EndMethod>>>>", newline)
+	}
 }
 
 func (p *printer) decl(decl ast.Decl) {
