@@ -35,9 +35,8 @@ func pyMove(src []byte) []byte {
 	class := []byte("class ")
 	pymark := []byte("<<<<")
 	pyend := []byte(">>>>")
-	fmts := []byte("fmt.")
 	fmtPrintf := []byte("fmt.Printf")
-	fmtSprintf := []byte("fmt.Sprintf")
+	fmtSprintf := []byte("fmt.Sprintf(")
 	prints := []byte("print")
 	endclass := "EndClass: "
 	method := "Method: "
@@ -115,9 +114,17 @@ func pyMove(src []byte) []byte {
 					li -= 2
 				}
 			}
-		case bytes.Contains(ln, fmts):
-			ln = bytes.Replace(ln, fmtPrintf, prints, -1)
+		case bytes.Contains(ln, fmtSprintf):
+			if bytes.Contains(ln, []byte("%")) {
+				ln = bytes.Replace(ln, []byte(`", `), []byte(`" % (`), -1)
+			}
 			ln = bytes.Replace(ln, fmtSprintf, []byte{}, -1)
+			lines[li] = ln
+		case bytes.Contains(ln, fmtPrintf):
+			if bytes.Contains(ln, []byte("%")) {
+				ln = bytes.Replace(ln, []byte(`", `), []byte(`" % `), -1)
+			}
+			ln = bytes.Replace(ln, fmtPrintf, prints, -1)
 			lines[li] = ln
 		}
 		li++

@@ -320,9 +320,9 @@ class Sim:
 		and add a few tabs at the end to allow for expansion..
 		"""
 		if train:
-			return ("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TrainEnv.Trial.Cur, ss.Time.Cycle, ss.TrainEnv.TrialName)
+			return "Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t" % (ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TrainEnv.Trial.Cur, ss.Time.Cycle, ss.TrainEnv.TrialName)
 		else:
-			return ("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TestEnv.Trial.Cur, ss.Time.Cycle, ss.TestEnv.TrialName)
+			return "Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t" % (ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TestEnv.Trial.Cur, ss.Time.Cycle, ss.TestEnv.TrialName)
 
 	def UpdateView(ss, train):
 		if ss.NetView != nil and ss.NetView.IsVisible():
@@ -440,7 +440,7 @@ class Sim:
 		ss.LogRun(ss.RunLog)
 		if ss.SaveWts:
 			fnm = ss.WeightsFileName()
-			print("Saving Weights to: %v\n", fnm)
+			print("Saving Weights to: %v\n" % fnm)
 			ss.Net.SaveWtsJSON(gi.FileName(fnm))
 
 	def NewRun(ss):
@@ -705,7 +705,7 @@ class Sim:
 		RunEpochName returns a string with the run and epoch numbers with leading zeros, suitable
 		for using in weights file names.  Uses 3, 5 digits for each.
 		"""
-		return ("%03d_%05d", run, epc)
+		return "%03d_%05d" % (run, epc)
 
 	def WeightsFileName(ss):
 		"""
@@ -1206,7 +1206,7 @@ class Sim:
 						else:
 							if notss.IsRunning:
 								ss.IsRunning = True
-								print("testing index: %v\n", idxs[0])
+								print("testing index: %v\n" % idxs[0])
 								ss.TestItem(idxs[0])
 								ss.IsRunning = False
 								vp.SetNeedsFullRender()))
@@ -1316,9 +1316,9 @@ class Sim:
 		ss.Init()
 
 		if note != "":
-			print("note: %s\n", note)
+			print("note: %s\n" % note)
 		if ss.ParamSet != "":
-			print("Using ParamSet: %s\n", ss.ParamSet)
+			print("Using ParamSet: %s\n" % ss.ParamSet)
 
 		if saveEpcLog:
 			err
@@ -1328,7 +1328,7 @@ class Sim:
 				log.Println(err)
 				ss.TrnEpcFile = nil
 			else:
-				print("Saving epoch log to: %v\n", fnm)
+				print("Saving epoch log to: %v\n" % fnm)
 				defer ss.TrnEpcFile.Close()
 		if saveRunLog:
 			err
@@ -1338,11 +1338,11 @@ class Sim:
 				log.Println(err)
 				ss.RunFile = nil
 			else:
-				print("Saving run log to: %v\n", fnm)
+				print("Saving run log to: %v\n" % fnm)
 				defer ss.RunFile.Close()
 		if ss.SaveWts:
 			print("Saving final weights per run\n")
-		print("Running %d Runs\n", ss.MaxRuns)
+		print("Running %d Runs\n" % ss.MaxRuns)
 		ss.Train()
 
 

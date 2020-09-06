@@ -12,8 +12,4 @@ We have modified the `printer` code in the `pyprint` package to instead print ou
 
 * class comments -> """
 
-* basic repl is done -- need to repl % thing..
-* fmt.Sprintf -> "...." % (params, ...)
-* fmt.Printf -> print "..." % (params, ...)
-
 * switch -> ifs.. -- grab switch expr and put into each if
