@@ -1,52 +1,55 @@
 package test
 
-GlobInt = 2
-GlobStr = "a string"
+GlobInt  int = 2
+GlobStr      = "a string"
+GlobBool     = False
 
-class MyStru :
+class MyStru:
 # A struct definition
 	def __init__(self):
 	# field desc
 		self.A int
 		self.B float32 # `desc:"field tag"`
 		self.C string  # `desc:"more tags"`
-
-# MethOne does something
-	def MethOne(st, arg1 ):
+	def MethOne(st, arg1):
 		"""
 		MethOne does something
 		"""
 		rv = st.A
-		for a = 0; a < 100; a++ :
+		for _, a in SomeList :
 			rv += a
+		st.A = True
+
+		ano = MyStru(A= 22, B= 44.2, C= "happy")
 
 		return rv
-	def MethTwo(st, arg1, arg2 , arg3 ):
+
+	def MethTwo(st, arg1, arg2, arg3):
 		"""
 		MethTwo does something
 		it is pretty cool
 		not really sure about that
 		"""
 		rv = st.A
-		for a = 0; a < 100; a++ :
+		for a in range(100):
 			rv += a
-
+		switch rv:
+		if 100:
+			rv *= 2
+		if 500:
+			rv /= 5
 		return rv
 
+
 # A global function
-def GlobFun(a, b ):
+def GlobFun(a, b):
 	"""
 	A global function
 	"""
-	if a > b and a == 0 or b == 0 :
+	if a > b and a == 0 or b == 0:
 		return a + b
-	else if a == b :
+	else if a == b:
 		return a * b
-	else :
+	else:
 		return a - b
 
-		
-		
-		
-		
-		

@@ -6,3 +6,14 @@ It is based on the Go `gofmt` command source code and the go `printer` package, 
 
 We have modified the `printer` code in the `pyprint` package to instead print out Python code.
 
+# TODO
+
+* imports
+
+* class comments -> """
+
+* basic repl is done -- need to repl % thing..
+* fmt.Sprintf -> "...." % (params, ...)
+* fmt.Printf -> print "..." % (params, ...)
+
+* switch -> ifs.. -- grab switch expr and put into each if

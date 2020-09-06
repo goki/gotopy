@@ -286,7 +286,7 @@ func (p *printer) exprList(prev0 token.Pos, list []ast.Expr, depth int, mode exp
 			// can align if possible.
 			// (needsLinebreak is set if we started a new line before)
 			p.expr(pair.Key)
-			p.print(pair.Colon, token.COLON, vtab)
+			p.print(pair.Colon, token.ASSIGN, vtab)
 			p.expr(pair.Value)
 		} else {
 			p.expr0(x, depth)
@@ -369,7 +369,7 @@ func (p *printer) parameters(fields *ast.FieldList) {
 				// by a linebreak call after a type, or in the next multi-line identList
 				// will do the right thing.
 				p.identList(par.Names, ws == indent)
-				p.print(blank)
+				// p.print(blank)
 			}
 			// parameter type
 			// p.expr(stripParensAlways(par.Type))
@@ -785,7 +785,7 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 
 	case *ast.KeyValueExpr:
 		p.expr(x.Key)
-		p.print(x.Colon, token.COLON, blank)
+		p.print(x.Colon, token.ASSIGN, blank)
 		p.expr(x.Value)
 
 	case *ast.StarExpr:
@@ -943,7 +943,7 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 			p.expr1(x.Type, token.HighestPrec, depth)
 		}
 		p.level++
-		p.print(x.Lbrace, token.LBRACE)
+		p.print(x.Lbrace, token.LPAREN)
 		p.exprList(x.Lbrace, x.Elts, 1, commaTerm, x.Rbrace, x.Incomplete)
 		// do not insert extra line break following a /*-style comment
 		// before the closing '}' as it might break the code if there
@@ -956,7 +956,7 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 		}
 		// need the initial indent to print lone comments with
 		// the proper level of indentation
-		p.print(indent, unindent, mode, x.Rbrace, token.RBRACE, mode)
+		p.print(indent, unindent, mode, x.Rbrace, token.RPAREN, mode)
 		p.level--
 
 	case *ast.Ellipsis:
@@ -1148,7 +1148,7 @@ func (p *printer) stmtList(list []ast.Stmt, nindent int, nextIsRBrace bool) {
 func (p *printer) block(b *ast.BlockStmt, nindent int) {
 	p.print(b.Lbrace, token.COLON)
 	p.stmtList(b.List, nindent, true)
-	p.linebreak(p.lineFor(b.Rbrace), 1, ignore, true)
+	// p.linebreak(p.lineFor(b.Rbrace), 1, ignore, true)
 	p.print(b.Rbrace) // , token.RBRACE)
 }
 
@@ -1224,9 +1224,10 @@ func (p *printer) controlClause(isForStmt bool, init ast.Stmt, expr ast.Expr, po
 			}
 		}
 	}
-	if needsBlank {
-		p.print(blank)
-	}
+	_ = needsBlank
+	// if needsBlank {
+	// 	p.print(blank)
+	// }
 }
 
 // indentList reports whether an expression list would look better if it
@@ -1365,9 +1366,12 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool) {
 		p.controlClause(false, s.Init, s.Cond, nil)
 		p.block(s.Body, 1)
 		if s.Else != nil {
-			p.print(token.ELSE, blank)
+			p.print(newline, token.ELSE)
 			switch s.Else.(type) {
-			case *ast.BlockStmt, *ast.IfStmt:
+			case *ast.BlockStmt:
+				p.stmt(s.Else, nextIsRBrace)
+			case *ast.IfStmt:
+				p.print(blank)
 				p.stmt(s.Else, nextIsRBrace)
 			default:
 				// This can only happen with an incorrectly
@@ -1390,8 +1394,8 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool) {
 		p.stmtList(s.Body, 1, nextIsRBrace)
 
 	case *ast.SwitchStmt:
-		// p.print(token.SWITCH)
-		// p.controlClause(false, s.Init, s.Tag, nil)
+		p.print(token.SWITCH)
+		p.controlClause(false, s.Init, s.Tag, nil)
 		p.block(s.Body, 0)
 
 	case *ast.TypeSwitchStmt:
@@ -1428,7 +1432,20 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool) {
 
 	case *ast.ForStmt:
 		p.print(token.FOR)
-		p.controlClause(true, s.Init, s.Cond, s.Post)
+		didRange := false
+		if x, ok := s.Cond.(*ast.BinaryExpr); ok {
+			if x.Op == token.LSS {
+				p.print(blank)
+				p.expr(x.X)
+				p.print(" in range", token.LPAREN)
+				p.expr(x.Y)
+				p.print(token.RPAREN)
+				didRange = true
+			}
+		}
+		if !didRange {
+			p.controlClause(true, s.Init, s.Cond, s.Post)
+		}
 		p.block(s.Body, 1)
 
 	case *ast.RangeStmt:
@@ -1441,9 +1458,10 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool) {
 				p.print(s.Value.Pos(), token.COMMA, blank)
 				p.expr(s.Value)
 			}
-			p.print(blank, s.TokPos, s.Tok, blank)
+			// p.print(blank, s.TokPos, s.Tok, blank)
 		}
-		p.print(token.RANGE, blank)
+		// p.print(token.RANGE, blank)
+		p.print(blank, "in", blank)
 		p.expr(stripParens(s.X))
 		p.print(blank)
 		p.block(s.Body, 1)
@@ -1621,22 +1639,28 @@ func (p *printer) spec(spec ast.Spec, n int, doIndent bool) {
 		p.setComment(s.Comment)
 
 	case *ast.TypeSpec:
-		p.setComment(s.Doc)
+		// p.setComment(s.Doc)
+		if s.Doc != nil {
+			p.cindex++ // skip current comments
+			p.commentOffset = 0
+		}
+		p.flush(p.pos, token.TYPE) // get rid of any comments
 		p.print("class", blank)
 		p.expr(s.Name)
-		if n == 1 {
-			p.print(blank)
-		} else {
-			p.print(vtab)
-		}
+		// if n == 1 {
+		// 	p.print(blank)
+		// } else {
+		// 	p.print(vtab)
+		// }
 		if s.Assign.IsValid() {
 			p.print(token.ASSIGN, blank)
 		}
+		p.pyFuncComments(s.Doc) // neither s.Doc nor s.Comment work here
 		p.expr(s.Type)
 		p.print("<<<<EndClass: ")
 		p.expr(s.Name)
 		p.print(">>>>", newline)
-		p.setComment(s.Comment)
+		// p.setComment(s.Comment)
 
 	default:
 		panic("unreachable")
@@ -1842,8 +1866,10 @@ func (p *printer) funcDecl(d *ast.FuncDecl) {
 	// We have to save startCol only after emitting FUNC; otherwise it can be on a
 	// different line (all whitespace preceding the FUNC is emitted only when the
 	// FUNC is emitted).
-	// p.flush(p.pos, p.lastTok)
-	// p.comments = nil
+	if d.Doc != nil {
+		p.cindex++ // skip current comments
+		p.commentOffset = 0
+	}
 	if d.Recv != nil {
 		p.print("<<<<Method: ")
 		p.printMethRecvType(d.Recv.List[0].Type)
@@ -1851,10 +1877,8 @@ func (p *printer) funcDecl(d *ast.FuncDecl) {
 		// p.parameters(d.Recv) // method: print receiver
 		// p.print(blank)
 		p.print(indent)
-	} else {
-		p.commentOffset = 0
 	}
-	p.flush(p.pos, p.lastTok)
+	p.flush(p.pos, token.FUNC) // get rid of any comments
 	p.print("def", blank)
 	startCol := p.out.Column - len("def ")
 	p.expr(d.Name)
@@ -1873,8 +1897,7 @@ func (p *printer) funcDecl(d *ast.FuncDecl) {
 	p.funcBody(p.distanceFrom(d.Pos(), startCol), vtab, d.Body)
 	if d.Recv != nil {
 		p.print(unindent)
-		p.flush(p.pos, p.lastTok)
-		p.print("<<<<EndMethod>>>>", newline)
+		p.print(newline, "<<<<EndMethod>>>>", newline)
 	}
 }
 

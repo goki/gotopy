@@ -1,7 +1,10 @@
 package test
 
-var GlobInt int = 2
-var GlobStr = "a string"
+var (
+	GlobInt int = 2
+	GlobStr = "a string"
+	GlobBool = false
+)
 
 // A struct definition
 type MyStru struct {
@@ -24,9 +27,13 @@ func GlobFun(a, b float32) float32 {
 // MethOne does something
 func (st *MyStru) MethOne(arg1 float32) int {
 	rv := st.A
-	for a := 0; a < 100; a++ {
+	for _, a := range SomeList {
 		rv += a
 	}
+	st.A = true
+
+	ano := MyStru{A: 22, B: 44.2, C: "happy"}
+	
 	return rv
 }
 
@@ -37,6 +44,12 @@ func (st *MyStru) MethTwo(arg1, arg2 float32, arg3 int) int {
 	rv := st.A
 	for a := 0; a < 100; a++ {
 		rv += a
+	}
+	switch rv {
+	case 100:
+		rv *= 2
+	case 500:
+		rv /= 5
 	}
 	return rv
 }

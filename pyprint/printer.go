@@ -1013,6 +1013,12 @@ func (p *printer) print(args ...interface{}) {
 			p.linePtr = nil
 		}
 
+		if data == "true" {
+			data = "True"
+		} else if data == "false" {
+			data = "False"
+		}
+
 		p.writeString(next, data, isLit)
 		p.impliedSemi = impliedSemi
 	}
@@ -1047,8 +1053,8 @@ func getDoc(n ast.Node) *ast.CommentGroup {
 		return n.Doc
 	case *ast.GenDecl:
 		return n.Doc
-	case *ast.FuncDecl:
-		return n.Doc
+	// case *ast.FuncDecl: // handled separately
+	// 	return n.Doc
 	case *ast.File:
 		return n.Doc
 	}
@@ -1120,6 +1126,7 @@ func (p *printer) printNode(node interface{}) error {
 		}
 	} else if n, ok := node.(*ast.File); ok {
 		// use ast.File comments, if any
+		// note: this seems to be typical source for a parsed .go file
 		p.comments = n.Comments
 	}
 
