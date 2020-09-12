@@ -1013,10 +1013,13 @@ func (p *printer) print(args ...interface{}) {
 			p.linePtr = nil
 		}
 
-		if data == "true" {
+		switch data {
+		case "true":
 			data = "True"
-		} else if data == "false" {
+		case "false":
 			data = "False"
+		case "nil":
+			data = "go.nil" // todo: gopy mode
 		}
 
 		p.writeString(next, data, isLit)

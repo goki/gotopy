@@ -813,8 +813,8 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 			// no parenthesis needed
 			opstr := pyOpCvt(x.Op)
 			if opstr != "" {
-				p.print(opstr)
-			} else {
+				p.print(opstr, blank)
+			} else if x.Op != token.AND {
 				p.print(x.Op)
 			}
 			if x.Op == token.RANGE {
@@ -852,14 +852,14 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 		p.selectorExpr(x, depth, false)
 
 	case *ast.TypeAssertExpr:
-		p.expr1(x.X, token.HighestPrec, depth)
-		p.print(token.PERIOD, x.Lparen, token.LPAREN)
 		if x.Type != nil {
 			p.expr(x.Type)
+			p.print(x.Lparen, token.LPAREN)
+			p.expr1(x.X, token.HighestPrec, depth)
+			p.print(x.Rparen, token.RPAREN)
 		} else {
-			p.print(token.TYPE)
+			p.expr1(x.X, token.HighestPrec, depth)
 		}
-		p.print(x.Rparen, token.RPAREN)
 
 	case *ast.IndexExpr:
 		// TODO(gri): should treat[] like parentheses and undo one level of depth
@@ -1308,7 +1308,14 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool) {
 	case *ast.IncDecStmt:
 		const depth = 1
 		p.expr0(s.X, depth+1)
-		p.print(s.TokPos, s.Tok)
+		p.print(s.TokPos, blank)
+		if s.Tok == token.INC {
+			p.print(token.ADD_ASSIGN, blank, "1")
+		} else if s.Tok == token.DEC {
+			p.print(token.SUB_ASSIGN, blank, "1")
+		} else {
+			p.print("UnknownIncDec")
+		}
 
 	case *ast.AssignStmt:
 		var depth = 1
@@ -1431,20 +1438,24 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool) {
 		}
 
 	case *ast.ForStmt:
-		p.print(token.FOR)
-		didRange := false
-		if x, ok := s.Cond.(*ast.BinaryExpr); ok {
-			if x.Op == token.LSS {
-				p.print(blank)
-				p.expr(x.X)
-				p.print(" in range", token.LPAREN)
-				p.expr(x.Y)
-				p.print(token.RPAREN)
-				didRange = true
+		if s.Init == nil && s.Cond == nil && s.Post == nil {
+			p.print("while True")
+		} else {
+			p.print(token.FOR)
+			didRange := false
+			if x, ok := s.Cond.(*ast.BinaryExpr); ok {
+				if x.Op == token.LSS {
+					p.print(blank)
+					p.expr(x.X)
+					p.print(" in range", token.LPAREN)
+					p.expr(x.Y)
+					p.print(token.RPAREN)
+					didRange = true
+				}
 			}
-		}
-		if !didRange {
-			p.controlClause(true, s.Init, s.Cond, s.Post)
+			if !didRange {
+				p.controlClause(true, s.Init, s.Cond, s.Post)
+			}
 		}
 		p.block(s.Body, 1)
 
@@ -1669,7 +1680,9 @@ func (p *printer) spec(spec ast.Spec, n int, doIndent bool) {
 
 func (p *printer) genDecl(d *ast.GenDecl) {
 	p.setComment(d.Doc)
-	// p.print(d.Pos(), d.Tok, blank)
+	if d.Tok == token.IMPORT {
+		p.print(d.Pos(), d.Tok, blank)
+	}
 
 	if d.Lparen.IsValid() || len(d.Specs) > 1 {
 		// group of parenthesized declarations

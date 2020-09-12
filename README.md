@@ -8,8 +8,18 @@ We have modified the `printer` code in the `pyprint` package to instead print ou
 
 # TODO
 
-* imports
+* add gopy flag
+
+* strings.Fields(x) -> x.split()
 
 * class comments -> """
 
 * switch -> ifs.. -- grab switch expr and put into each if
+
+# gopy specific mode
+
+* replace []string() -> go.Slice_string etc 
+
+# Check
+
+

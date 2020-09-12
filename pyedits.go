@@ -22,9 +22,11 @@ func moveLines(lines *[][]byte, to, st, ed int) {
 	*lines = nln
 }
 
-// pyMove moves python segments around, e.g., methods
+// pyEdits performs post-generation edits for python
+// * moves python segments around, e.g., methods
 // into their proper classes
-func pyMove(src []byte) []byte {
+// * fixes printf, slice other common code
+func pyEdits(src []byte, gopy bool) []byte {
 	type sted struct {
 		st, ed int
 	}
@@ -38,6 +40,20 @@ func pyMove(src []byte) []byte {
 	fmtPrintf := []byte("fmt.Printf")
 	fmtSprintf := []byte("fmt.Sprintf(")
 	prints := []byte("print")
+	eqappend := []byte("= append(")
+	itoa := []byte("strconv.Itoa")
+	float64p := []byte("float64(")
+	float32p := []byte("float32(")
+	floatp := []byte("float(")
+	slicestr := []byte("[]string(")
+	sliceint := []byte("[]int(")
+	slicefloat64 := []byte("[]float64(")
+	slicefloat32 := []byte("[]float32(")
+	goslicestr := []byte("go.Slice_string([")
+	gosliceint := []byte("go.Slice_int([")
+	goslicefloat64 := []byte("go.Slice_float64([")
+	goslicefloat32 := []byte("go.Slice_float32([")
+
 	endclass := "EndClass: "
 	method := "Method: "
 	endmethod := "EndMethod"
@@ -67,6 +83,10 @@ func pyMove(src []byte) []byte {
 		} else {
 			curComSt = -1
 		}
+
+		ln = bytes.Replace(ln, float64p, floatp, -1)
+		ln = bytes.Replace(ln, float32p, floatp, -1)
+		lines[li] = ln
 
 		switch {
 		case bytes.Equal(ln, []byte("	:")) || bytes.Equal(ln, []byte(":")):
@@ -125,6 +145,33 @@ func pyMove(src []byte) []byte {
 				ln = bytes.Replace(ln, []byte(`", `), []byte(`" % `), -1)
 			}
 			ln = bytes.Replace(ln, fmtPrintf, prints, -1)
+			lines[li] = ln
+		case bytes.Contains(ln, eqappend):
+			idx := bytes.Index(ln, eqappend)
+			comi := bytes.Index(ln[idx+len(eqappend):], []byte(","))
+			nln := make([]byte, idx-1)
+			copy(nln, ln[:idx-1])
+			nln = append(nln, []byte(".append(")...)
+			nln = append(nln, ln[idx+len(eqappend)+comi+1:]...)
+			lines[li] = nln
+		case bytes.Contains(ln, slicestr):
+			ln = bytes.Replace(ln, slicestr, goslicestr, -1)
+			ln = bytes.Replace(ln, []byte(")"), []byte("])"), 1)
+			lines[li] = ln
+		case bytes.Contains(ln, sliceint):
+			ln = bytes.Replace(ln, sliceint, gosliceint, -1)
+			ln = bytes.Replace(ln, []byte(")"), []byte("])"), 1)
+			lines[li] = ln
+		case bytes.Contains(ln, slicefloat64):
+			ln = bytes.Replace(ln, slicefloat64, goslicefloat64, -1)
+			ln = bytes.Replace(ln, []byte(")"), []byte("])"), 1)
+			lines[li] = ln
+		case bytes.Contains(ln, slicefloat32):
+			ln = bytes.Replace(ln, slicefloat32, goslicefloat32, -1)
+			ln = bytes.Replace(ln, []byte(")"), []byte("])"), 1)
+			lines[li] = ln
+		case bytes.Contains(ln, itoa):
+			ln = bytes.Replace(ln, itoa, []byte(`str`), -1)
 			lines[li] = ln
 		}
 		li++
