@@ -6,7 +6,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 
 	"github.com/goki/gotopy/pyprint"
@@ -177,7 +176,6 @@ func pyEdits(src []byte) []byte {
 				nln = append(nln, ln[pi+1:pi+comi]...)
 				nln = append(nln, '.')
 				meth := bytes.ToLower(ln[idx+len(stringsdot) : pi+1])
-				fmt.Println(string(meth))
 				if bytes.Equal(meth, []byte("fields(")) {
 					meth = []byte("split(")
 				}

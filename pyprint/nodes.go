@@ -792,6 +792,17 @@ func isBinary(expr ast.Expr) bool {
 	return ok
 }
 
+func (p *printer) ident(id *ast.Ident) {
+	// if id.Name == "AlphaCycle" {
+	// 	fmt.Printf("%+V\n", id)
+	// }
+	// todo: seems like Obj is typically nil.. not sure how to fix this..
+	if id.Obj != nil && id.Obj.Kind == ast.Con { // constants are assumed to be Enums -- use type scoping for python
+		p.print(id.Obj.Name, token.PERIOD)
+	}
+	p.print(id.Pos(), id)
+}
+
 func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 	p.print(expr.Pos())
 
@@ -800,7 +811,7 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 		p.print("BadExpr")
 
 	case *ast.Ident:
-		p.print(x)
+		p.ident(x)
 
 	case *ast.BinaryExpr:
 		if depth < 1 {
@@ -1115,7 +1126,10 @@ func (p *printer) selectorExpr(x *ast.SelectorExpr, depth int, isMethod bool) bo
 		}
 		return true
 	}
-	p.print(x.Sel.Pos(), x.Sel)
+	// if x.Sel.Name == "AlphaCycle" {
+	// 	fmt.Printf("%+V\n", x)
+	// }
+	p.ident(x.Sel)
 	return false
 }
 
