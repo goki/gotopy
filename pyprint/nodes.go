@@ -1701,6 +1701,8 @@ func (p *printer) spec(spec ast.Spec, n int, doIndent bool) {
 		p.expr(s.Name)
 		if p.Mode&GoGi != 0 {
 			p.print("(pygiv.ClassViewObj):", newline)
+		} else {
+			p.print(":", newline)
 		}
 		// if n == 1 {
 		// 	p.print(blank)
