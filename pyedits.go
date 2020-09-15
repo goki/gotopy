@@ -6,7 +6,10 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
+
+	"github.com/goki/gotopy/pyprint"
 )
 
 // moveLines moves the st,ed region to 'to' line
@@ -26,11 +29,10 @@ func moveLines(lines *[][]byte, to, st, ed int) {
 // * moves python segments around, e.g., methods
 // into their proper classes
 // * fixes printf, slice other common code
-func pyEdits(src []byte, gopy bool) []byte {
+func pyEdits(src []byte) []byte {
 	type sted struct {
 		st, ed int
 	}
-
 	classes := map[string]sted{}
 
 	nl := []byte("\n")
@@ -41,10 +43,14 @@ func pyEdits(src []byte, gopy bool) []byte {
 	fmtSprintf := []byte("fmt.Sprintf(")
 	prints := []byte("print")
 	eqappend := []byte("= append(")
+	elseif := []byte("else if")
+	elif := []byte("elif")
 	itoa := []byte("strconv.Itoa")
 	float64p := []byte("float64(")
 	float32p := []byte("float32(")
 	floatp := []byte("float(")
+	stringp := []byte("string(")
+	strp := []byte("str(")
 	slicestr := []byte("[]string(")
 	sliceint := []byte("[]int(")
 	slicefloat64 := []byte("[]float64(")
@@ -53,6 +59,8 @@ func pyEdits(src []byte, gopy bool) []byte {
 	gosliceint := []byte("go.Slice_int([")
 	goslicefloat64 := []byte("go.Slice_float64([")
 	goslicefloat32 := []byte("go.Slice_float32([")
+	stringsdot := []byte("strings.")
+	copyp := []byte("copy(")
 
 	endclass := "EndClass: "
 	method := "Method: "
@@ -65,6 +73,9 @@ func pyEdits(src []byte, gopy bool) []byte {
 	curComSt := -1
 	lastComSt := -1
 	lastComEd := -1
+
+	gopy := (printerMode&pyprint.GoPy != 0)
+	// gogi := (printerMode&pyprint.GoGi != 0)
 
 	li := 0
 	for {
@@ -86,6 +97,7 @@ func pyEdits(src []byte, gopy bool) []byte {
 
 		ln = bytes.Replace(ln, float64p, floatp, -1)
 		ln = bytes.Replace(ln, float32p, floatp, -1)
+		ln = bytes.Replace(ln, stringp, strp, -1)
 		lines[li] = ln
 
 		switch {
@@ -154,24 +166,65 @@ func pyEdits(src []byte, gopy bool) []byte {
 			nln = append(nln, []byte(".append(")...)
 			nln = append(nln, ln[idx+len(eqappend)+comi+1:]...)
 			lines[li] = nln
-		case bytes.Contains(ln, slicestr):
+		case bytes.Contains(ln, stringsdot):
+			idx := bytes.Index(ln, stringsdot)
+			pi := idx + len(stringsdot) + bytes.Index(ln[idx+len(stringsdot):], []byte("("))
+			comi := bytes.Index(ln[pi:], []byte(","))
+			nln := make([]byte, idx)
+			copy(nln, ln[:idx])
+			if comi < 0 {
+				comi = bytes.Index(ln[pi:], []byte(")"))
+				nln = append(nln, ln[pi+1:pi+comi]...)
+				nln = append(nln, '.')
+				meth := bytes.ToLower(ln[idx+len(stringsdot) : pi+1])
+				fmt.Println(string(meth))
+				if bytes.Equal(meth, []byte("fields(")) {
+					meth = []byte("split(")
+				}
+				nln = append(nln, meth...)
+				nln = append(nln, ln[pi+comi:]...)
+			} else {
+				nln = append(nln, ln[pi+1:pi+comi]...)
+				nln = append(nln, '.')
+				meth := bytes.ToLower(ln[idx+len(stringsdot) : pi+1])
+				nln = append(nln, meth...)
+				nln = append(nln, ln[pi+comi+1:]...)
+			}
+			lines[li] = nln
+		case bytes.Contains(ln, copyp):
+			idx := bytes.Index(ln, copyp)
+			pi := idx + len(copyp) + bytes.Index(ln[idx+len(stringsdot):], []byte("("))
+			comi := bytes.Index(ln[pi:], []byte(","))
+			nln := make([]byte, idx)
+			copy(nln, ln[:idx])
+			nln = append(nln, ln[pi+1:pi+comi]...)
+			nln = append(nln, '.')
+			nln = append(nln, copyp...)
+			nln = append(nln, ln[pi+comi+1:]...)
+			lines[li] = nln
+		case bytes.Contains(ln, itoa):
+			ln = bytes.Replace(ln, itoa, []byte(`str`), -1)
+			lines[li] = ln
+		case bytes.Contains(ln, elseif):
+			ln = bytes.Replace(ln, elseif, elif, -1)
+			lines[li] = ln
+
+		// gopy cases
+		case gopy && bytes.Contains(ln, slicestr):
 			ln = bytes.Replace(ln, slicestr, goslicestr, -1)
 			ln = bytes.Replace(ln, []byte(")"), []byte("])"), 1)
 			lines[li] = ln
-		case bytes.Contains(ln, sliceint):
+		case gopy && bytes.Contains(ln, sliceint):
 			ln = bytes.Replace(ln, sliceint, gosliceint, -1)
 			ln = bytes.Replace(ln, []byte(")"), []byte("])"), 1)
 			lines[li] = ln
-		case bytes.Contains(ln, slicefloat64):
+		case gopy && bytes.Contains(ln, slicefloat64):
 			ln = bytes.Replace(ln, slicefloat64, goslicefloat64, -1)
 			ln = bytes.Replace(ln, []byte(")"), []byte("])"), 1)
 			lines[li] = ln
-		case bytes.Contains(ln, slicefloat32):
+		case gopy && bytes.Contains(ln, slicefloat32):
 			ln = bytes.Replace(ln, slicefloat32, goslicefloat32, -1)
 			ln = bytes.Replace(ln, []byte(")"), []byte("])"), 1)
-			lines[li] = ln
-		case bytes.Contains(ln, itoa):
-			ln = bytes.Replace(ln, itoa, []byte(`str`), -1)
 			lines[li] = ln
 		}
 		li++

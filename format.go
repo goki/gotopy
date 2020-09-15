@@ -36,7 +36,7 @@ func format(
 		if err != nil {
 			return nil, err
 		}
-		pyfix := pyEdits(buf.Bytes(), true)
+		pyfix := pyEdits(buf.Bytes())
 		return pyfix, nil
 		// return buf.Bytes(), nil
 	}
@@ -82,7 +82,7 @@ func format(
 		return nil, err
 	}
 
-	pyfix := pyEdits(buf.Bytes(), true)
+	pyfix := pyEdits(buf.Bytes())
 
 	out := sourceAdj(pyfix, cfg.Indent)
 

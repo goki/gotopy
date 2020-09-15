@@ -38,6 +38,8 @@ var (
 	simplifyAST = flag.Bool("s", false, "simplify code")
 	doDiff      = flag.Bool("d", false, "display diffs instead of rewriting files")
 	allErrors   = flag.Bool("e", false, "report all errors (not just the first 10 on different lines)")
+	gopyMode    = flag.Bool("gopy", false, "support GoPy-specific Python code generation")
+	gogiMode    = flag.Bool("gogi", false, "support GoGi-specific Python code generation (implies gopy)")
 
 	// debugging
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to this file")
@@ -45,8 +47,8 @@ var (
 
 // Keep these in sync with go/format/format.go.
 const (
-	tabWidth    = 8
-	printerMode = pyprint.UseSpaces | pyprint.TabIndent | printerNormalizeNumbers
+	tabWidth       = 8
+	printerModeDef = pyprint.UseSpaces | pyprint.TabIndent | printerNormalizeNumbers
 
 	// printerNormalizeNumbers means to canonicalize number literal prefixes
 	// and exponents while printing. See https://golang.org/doc/go1.13#gofmt.
@@ -56,10 +58,11 @@ const (
 )
 
 var (
-	fileSet    = token.NewFileSet() // per process FileSet
-	exitCode   = 0
-	rewrite    func(*ast.File) *ast.File
-	parserMode parser.Mode
+	fileSet     = token.NewFileSet() // per process FileSet
+	exitCode    = 0
+	rewrite     func(*ast.File) *ast.File
+	parserMode  parser.Mode
+	printerMode = printerModeDef
 )
 
 func report(err error) {
@@ -222,6 +225,14 @@ func gofmtMain() {
 			report(err)
 		}
 		return
+	}
+
+	if *gopyMode {
+		printerMode |= pyprint.GoPy
+	}
+
+	if *gogiMode {
+		printerMode |= pyprint.GoGi | pyprint.GoPy
 	}
 
 	for i := 0; i < flag.NArg(); i++ {

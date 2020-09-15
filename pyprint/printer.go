@@ -1019,7 +1019,9 @@ func (p *printer) print(args ...interface{}) {
 		case "false":
 			data = "False"
 		case "nil":
-			data = "go.nil" // todo: gopy mode
+			if p.Config.Mode&GoPy != 0 {
+				data = "go.nil"
+			}
 		}
 
 		p.writeString(next, data, isLit)
@@ -1293,6 +1295,8 @@ const (
 	TabIndent                  // use tabs for indentation independent of UseSpaces
 	UseSpaces                  // use spaces instead of tabs for alignment
 	SourcePos                  // emit //line directives to preserve original source positions
+	GoPy                       // support GoPy-specific Python code generation
+	GoGi                       // support GoGi-specific Python code generation
 )
 
 // The mode below is not included in printer's public API because

@@ -443,6 +443,17 @@ func (p *printer) setLineComment(text string) {
 	p.setComment(&ast.CommentGroup{List: []*ast.Comment{{Slash: token.NoPos, Text: text}}})
 }
 
+func (p *printer) printFieldInit(fi ast.Expr) {
+	switch fi.(type) {
+	case *ast.Ident, *ast.SelectorExpr:
+		p.expr(fi)
+		p.print(token.LPAREN, token.RPAREN)
+	default:
+		p.expr(fi)
+		// 	fmt.Printf("%T\n", fi)
+	}
+}
+
 func (p *printer) fieldList(fields *ast.FieldList, isStruct, isIncomplete bool) {
 	lbrace := fields.Opening
 	list := fields.List
@@ -496,6 +507,9 @@ func (p *printer) fieldList(fields *ast.FieldList, isStruct, isIncomplete bool) 
 
 	if isStruct {
 		p.print("def __init__(self):", newline, indent)
+		if p.Mode&GoGi != 0 {
+			p.print("super(Sim, self).__init__()", newline)
+		}
 		sep := vtab
 		if len(list) == 1 {
 			sep = blank
@@ -512,8 +526,12 @@ func (p *printer) fieldList(fields *ast.FieldList, isStruct, isIncomplete bool) 
 			if len(f.Names) > 0 {
 				// named fields
 				p.identList(f.Names, false)
-				p.print(sep)
-				p.expr(f.Type)
+				p.print(sep, token.ASSIGN, sep)
+				if se, ok := f.Type.(*ast.StarExpr); ok {
+					p.printFieldInit(se.X)
+				} else {
+					p.printFieldInit(f.Type)
+				}
 				extraTabs = 1
 			} else {
 				// anonymous field
@@ -525,8 +543,16 @@ func (p *printer) fieldList(fields *ast.FieldList, isStruct, isIncomplete bool) 
 					p.print(sep)
 				}
 				p.print(sep)
-				p.print("# ")
-				p.expr(f.Tag)
+				if p.Mode&GoGi != 0 {
+					p.print(newline, `self.SetTags("`+f.Names[0].Name+`", '`)
+					tg := f.Tag.Value
+					tg = strings.Replace(tg, "'", `\'`, -1)
+					p.print(tg[1 : len(tg)-1]) // cut out ` `
+					p.print(`')`)
+				} else {
+					p.print("# ")
+					p.expr(f.Tag)
+				}
 				extraTabs = 0
 			}
 			if f.Comment != nil {
@@ -986,10 +1012,11 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 		p.fieldList(x.Methods, false, x.Incomplete)
 
 	case *ast.MapType:
-		p.print(token.MAP, token.LBRACK)
-		p.expr(x.Key)
-		p.print(token.RBRACK)
-		p.expr(x.Value)
+		p.print(token.LBRACE, token.RBRACE)
+		// p.print(token.MAP, token.LBRACK)
+		// p.expr(x.Key)
+		// p.print(token.RBRACK)
+		// p.expr(x.Value)
 
 	case *ast.ChanType:
 		switch x.Dir {
@@ -1658,6 +1685,9 @@ func (p *printer) spec(spec ast.Spec, n int, doIndent bool) {
 		p.flush(p.pos, token.TYPE) // get rid of any comments
 		p.print("class", blank)
 		p.expr(s.Name)
+		if p.Mode&GoGi != 0 {
+			p.print("(pygiv.ClassViewObj):", newline)
+		}
 		// if n == 1 {
 		// 	p.print(blank)
 		// } else {
@@ -1666,8 +1696,10 @@ func (p *printer) spec(spec ast.Spec, n int, doIndent bool) {
 		if s.Assign.IsValid() {
 			p.print(token.ASSIGN, blank)
 		}
-		p.pyFuncComments(s.Doc) // neither s.Doc nor s.Comment work here
+		doc := p.comments[p.cindex-1]
+		p.pyFuncComments(doc) // neither s.Doc nor s.Comment work here
 		p.expr(s.Type)
+		p.print(newline)
 		p.print("<<<<EndClass: ")
 		p.expr(s.Name)
 		p.print(">>>>", newline)
@@ -1859,19 +1891,24 @@ func (p *printer) pyFuncComments(com *ast.CommentGroup) {
 	if com == nil || len(com.List) == 0 {
 		return
 	}
+	p.print("\t")
 	p.print(`"""`, newline)
 	for _, c := range com.List {
+		p.print("\t")
 		if len(c.Text) < 3 {
 			p.print(c.Text)
 		} else {
 			if c.Text[1] == '/' {
 				p.print(c.Text[3:])
+			} else if c.Text[0] == '#' {
+				p.print(c.Text[2:])
 			} else {
 				p.print(c.Text)
 			}
 		}
 		p.print(newline)
 	}
+	p.print("\t")
 	p.print(`"""`, newline)
 }
 
@@ -1904,9 +1941,8 @@ func (p *printer) funcDecl(d *ast.FuncDecl) {
 	}
 	p.signature(d.Type.Params, d.Type.Results)
 	p.print(token.RPAREN)
-	p.print(token.COLON, newline, indent)
+	p.print(token.COLON, newline)
 	p.pyFuncComments(d.Doc)
-	p.print(unindent)
 	p.funcBody(p.distanceFrom(d.Pos(), startCol), vtab, d.Body)
 	if d.Recv != nil {
 		p.print(unindent)
