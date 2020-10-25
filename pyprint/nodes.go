@@ -1712,14 +1712,16 @@ func (p *printer) spec(spec ast.Spec, n int, doIndent bool) {
 		if s.Assign.IsValid() {
 			p.print(token.ASSIGN, blank)
 		}
-		doc := p.comments[p.cindex-1]
-		p.pyFuncComments(doc) // neither s.Doc nor s.Comment work here
-		p.expr(s.Type)
-		p.print(newline)
-		p.print("<<<<EndClass: ")
-		p.expr(s.Name)
-		p.print(">>>>", newline)
-		// p.setComment(s.Comment)
+		if p.cindex-1 < len(p.comments) {
+			doc := p.comments[p.cindex-1]
+			p.pyFuncComments(doc) // neither s.Doc nor s.Comment work here
+			p.expr(s.Type)
+			p.print(newline)
+			p.print("<<<<EndClass: ")
+			p.expr(s.Name)
+			p.print(">>>>", newline)
+			// p.setComment(s.Comment)
+		}
 
 	default:
 		panic("unreachable")
