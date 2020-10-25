@@ -138,6 +138,8 @@ func pyEditsReplace(lines [][]byte) {
 	eqappend := []byte("= append(")
 	elseif := []byte("else if")
 	elif := []byte("elif")
+	forblank := []byte("for _, ")
+	fornoblank := []byte("for ")
 	itoa := []byte("strconv.Itoa")
 	float64p := []byte("float64(")
 	float32p := []byte("float32(")
@@ -162,6 +164,7 @@ func pyEditsReplace(lines [][]byte) {
 		ln = bytes.Replace(ln, float64p, floatp, -1)
 		ln = bytes.Replace(ln, float32p, floatp, -1)
 		ln = bytes.Replace(ln, stringp, strp, -1)
+		ln = bytes.Replace(ln, forblank, fornoblank, -1)
 
 		if bytes.Contains(ln, fmtSprintf) {
 			if bytes.Contains(ln, []byte("%")) {

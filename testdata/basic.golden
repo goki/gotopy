@@ -6,50 +6,56 @@ GlobBool     = False
 
 class MyStru:
 # A struct definition
-	def __init__(self):
-	# field desc
-		self.A int
-		self.B float32 # `desc:"field tag"`
-		self.C string  # `desc:"more tags"`
-	def MethOne(st, arg1):
-		"""
-		MethOne does something
-		"""
-		rv = st.A
-		for _, a in SomeList :
-			rv += a
-		st.A = True
+    """
+    A struct definition
 
-		ano = MyStru(A= 22, B= 44.2, C= "happy")
+# field desc
+    """
 
-		return rv
+    def __init__(self):
+        self.A = int()
+        self.B = float() # `desc:"field tag"`
+        self.C = str()  # `desc:"more tags"`
 
-	def MethTwo(st, arg1, arg2, arg3):
-		"""
-		MethTwo does something
-		it is pretty cool
-		not really sure about that
-		"""
-		rv = st.A
-		for a in range(100):
-			rv += a
-		switch rv:
-		if 100:
-			rv *= 2
-		if 500:
-			rv /= 5
-		return rv
+    def MethOne(st, arg1):
+        """
+        MethOne does something
+        """
+        rv = st.A
+        for a in SomeList :
+            rv += a
+        st.A = True
+
+        ano = MyStru(A= 22, B= 44.2, C= "happy")
+
+        return rv
+
+    def MethTwo(st, arg1, arg2, arg3):
+        """
+        MethTwo does something
+        it is pretty cool
+        not really sure about that
+        """
+        rv = st.A
+        for a in range(100):
+            rv += a
+        switch rv:
+        if 100:
+            rv *= 2
+        if 500:
+            rv /= 5
+        return rv
 
 
 # A global function
 def GlobFun(a, b):
-	"""
-	A global function
-	"""
-	if a > b and a == 0 or b == 0:
-		return a + b
-	else if a == b:
-		return a * b
-	else:
-		return a - b
+    """
+    A global function
+    """
+    if a > b and a == 0 or b == 0:
+        return a + b
+    elif a == b:
+        return a * b
+    else:
+        return a - b
 

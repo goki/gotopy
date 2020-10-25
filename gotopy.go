@@ -80,6 +80,13 @@ func initParserMode() {
 	if *allErrors {
 		parserMode |= parser.AllErrors
 	}
+	if *gopyMode {
+		printerMode |= pyprint.GoPy
+	}
+
+	if *gogiMode {
+		printerMode |= pyprint.GoGi | pyprint.GoPy
+	}
 }
 
 func isGoFile(f os.FileInfo) bool {
@@ -225,14 +232,6 @@ func gofmtMain() {
 			report(err)
 		}
 		return
-	}
-
-	if *gopyMode {
-		printerMode |= pyprint.GoPy
-	}
-
-	if *gogiMode {
-		printerMode |= pyprint.GoGi | pyprint.GoPy
 	}
 
 	for i := 0; i < flag.NArg(); i++ {

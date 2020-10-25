@@ -79,6 +79,11 @@ func runTest(t *testing.T, in, out string) {
 			*rewriteRule = value
 		case "-s":
 			*simplifyAST = true
+		case "-gopy":
+			*gopyMode = true
+		case "-gogi":
+			*gopyMode = true
+			*gogiMode = true
 		case "-stdin":
 			// fake flag - pretend input is from stdin
 			stdin = true
